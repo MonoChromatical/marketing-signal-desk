@@ -1587,3 +1587,10 @@ select {
     grid-column: 1;
   }
 }
+
+.rollup-note {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}

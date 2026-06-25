@@ -502,7 +502,7 @@ function renderRowEditor() {
   setRowEditorDisabled(false);
   const currentId = dom.editRowSelect.value || rows[0].id;
   dom.editRowSelect.innerHTML = rows.map((row) => `
-    <option value="${escapeHTML(row.id)}">${escapeHTML(row.platform)} - ${escapeHTML(row.campaign)} - ${escapeHTML(row.ad_name)}</option>
+    <option value="${escapeHTML(row.id)}">${escapeHTML(row.date || "No date")} - ${escapeHTML(row.platform)} - ${escapeHTML(row.campaign)} - ${escapeHTML(row.ad_name)}</option>
   `).join("");
   dom.editRowSelect.value = rows.some((row) => row.id === currentId) ? currentId : rows[0].id;
   fillRowEditor();
@@ -582,7 +582,7 @@ function numericInput(input) {
 
 function renderTable() {
   if (!state.analysis?.campaigns?.length) {
-    dom.campaignRows.innerHTML = `<tr><td colspan="9">No rows loaded.</td></tr>`;
+    dom.campaignRows.innerHTML = `<tr><td colspan="10">No rows loaded.</td></tr>`;
     return;
   }
 
@@ -590,6 +590,7 @@ function renderTable() {
     <tr>
       <td>${escapeHTML(group.platform)}</td>
       <td>${escapeHTML(group.campaign)}</td>
+      <td>${escapeHTML(group.ad_name)}</td>
       <td>${money(group.spend)}</td>
       <td>${number(group.clicks)}</td>
       <td>${number(group.leads)}</td>

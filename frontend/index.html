@@ -263,10 +263,10 @@
           <div class="panel-header">
             <div>
               <div class="eyebrow-row">
-                <p class="eyebrow">Normalized rows</p>
-                <span class="help-tip" tabindex="0" aria-label="Campaign Snapshot help" data-help="Shows the cleaned campaign groups Signal Desk analyzed, including spend, clicks, leads, qualified leads, CPL, qualified CPL, and CTR.">?</span>
+                <p class="eyebrow">Campaign/ad rollup</p>
+                <span class="help-tip" tabindex="0" aria-label="Campaign Snapshot help" data-help="Shows grouped totals by platform, campaign, and ad name. Data Corrections edits one underlying source row at a time, so values can differ from this rollup.">?</span>
               </div>
-              <h3>Campaign Snapshot</h3>
+              <h3>Campaign / Ad Snapshot</h3>
             </div>
           </div>
           <div class="table-wrap">
@@ -275,6 +275,7 @@
                 <tr>
                   <th>Platform</th>
                   <th>Campaign</th>
+                  <th>Ad</th>
                   <th>Spend</th>
                   <th>Clicks</th>
                   <th>Leads</th>
@@ -286,27 +287,28 @@
               </thead>
               <tbody id="campaignRows">
                 <tr>
-                  <td colspan="9">No rows loaded.</td>
+                  <td colspan="10">No rows loaded.</td>
                 </tr>
               </tbody>
             </table>
           </div>
+          <p class="rollup-note">Snapshot rows are grouped totals by platform, campaign, and ad. Data Corrections edits individual source rows from the upload.</p>
         </section>
 
         <section class="panel correction-panel">
           <div class="panel-header">
             <div>
               <div class="eyebrow-row">
-                <p class="eyebrow">Data corrections</p>
-                <span class="help-tip" tabindex="0" aria-label="Data Corrections help" data-help="Fix a loaded campaign row without editing the original CSV. Signal Desk re-runs analysis after you apply changes.">?</span>
+                <p class="eyebrow">Source row corrections</p>
+                <span class="help-tip" tabindex="0" aria-label="Data Corrections help" data-help="Fix one underlying source row without editing the original CSV. The snapshot above is a grouped campaign/ad rollup, so one correction can update a larger total.">?</span>
               </div>
-              <h3>Edit Loaded Row</h3>
+              <h3>Edit Individual Row</h3>
             </div>
             <button id="applyRowEdit" type="button">Apply Changes</button>
           </div>
           <div class="correction-grid">
             <label class="form-field wide">
-              <span>Row</span>
+              <span>Source row</span>
               <select id="editRowSelect" aria-label="Select loaded row to edit">
                 <option value="">Load data to edit rows</option>
               </select>
