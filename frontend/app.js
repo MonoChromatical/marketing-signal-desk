@@ -571,8 +571,8 @@ async function applyRowEdit() {
   state.analysis = analysis;
   state.selectedActionId = analysis.actions[0]?.id || null;
   dom.dataStatus.textContent = `Corrections applied: ${analysis.rows.length} rows normalized, ${analysis.actions.length} actions generated.`;
-  dom.editStatus.textContent = "Correction applied. Action queue and standup plan were recalculated.";
   render();
+  dom.editStatus.textContent = "Correction applied. Action queue and standup plan were recalculated.";
 }
 
 function numericInput(input) {
