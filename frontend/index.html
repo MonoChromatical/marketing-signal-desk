@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Signal Desk</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">SD</div>
+          <div>
+            <h1>Signal Desk</h1>
+            <p>AI media buying command center</p>
+          </div>
+        </div>
+
+        <nav class="nav-list" aria-label="Main sections">
+          <a href="#overview" class="active">Overview</a>
+          <a href="#actions">Action Queue</a>
+          <a href="#standup">Standup Plan</a>
+          <a href="#aiAgent">AI Agent</a>
+          <a href="#creative">Creative Intel</a>
+          <a href="#brief">Experiment Plan</a>
+          <a href="#settings">Settings</a>
+        </nav>
+
+        <section class="upload-panel">
+          <div class="heading-with-help">
+            <h2>Data Intake</h2>
+            <span class="help-tip" tabindex="0" aria-label="Data Intake help" data-help="Upload a campaign CSV or load the built-in sample account. Signal Desk normalizes the rows before ranking actions.">?</span>
+          </div>
+          <p>Upload your own campaign CSV, or load sample data for a step-by-step review.</p>
+          <label class="file-button">
+            <input id="csvInput" type="file" accept=".csv,text/csv" />
+            Upload CSV
+          </label>
+          <button id="sampleButton" class="secondary-button" type="button">Load Sample Data</button>
+          <button id="resetButton" class="ghost-button" type="button">Reset</button>
+          <p id="dataStatus" class="data-status">No account loaded.</p>
+        </section>
+        <section id="settings" class="settings-panel">
+          <div class="heading-with-help">
+            <h2>AI Settings</h2>
+            <span class="help-tip" tabindex="0" aria-label="AI Settings help" data-help="Bring your own OpenAI API key for live AI output. Signal Desk still works in deterministic fallback mode without a key.">?</span>
+          </div>
+          <label class="field-label" for="openaiKey">OpenAI API key</label>
+          <input id="openaiKey" class="settings-input" type="password" autocomplete="off" placeholder="sk-..." />
+          <label class="field-label" for="modelSelect">Model</label>
+          <select id="modelSelect" class="settings-input">
+            <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+            <option value="gpt-4.1">gpt-4.1</option>
+            <option value="gpt-4o-mini">gpt-4o-mini</option>
+          </select>
+          <label class="remember-row">
+            <input id="rememberKey" type="checkbox" />
+            <span>Remember on this device</span>
+          </label>
+          <button id="clearKey" class="ghost-button" type="button">Clear Key</button>
+          <p id="aiSettingsStatus" class="data-status">Fallback mode ready.</p>
+        </section>      </aside>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <div class="eyebrow-row">
+              <p class="eyebrow">Performance Triage</p>
+              <span class="help-tip" tabindex="0" aria-label="Performance Triage help" data-help="The main workflow: find waste, find winners, and turn both into clear next actions before more budget is spent.">?</span>
+            </div>
+            <h2>Find the next best move before budget leaks.</h2>
+          </div>
+          <div class="topbar-actions">
+            <button id="demoButton" type="button">Run Full Demo</button>
+            <button id="generateMemo" type="button">Generate Action Memo</button>
+            <button id="exportMarkdown" type="button">Export Actions</button>
+          </div>
+        </header>
+
+        <section class="demo-strip" aria-label="Demo runbook">
+          <div>
+            <div class="eyebrow-row">
+              <p class="eyebrow">Judge demo path</p>
+              <span class="help-tip" tabindex="0" aria-label="Judge demo path help" data-help="A guided path for the contest demo. Run Full Demo loads sample data, creates the memo, creates ad ideas, and jumps to the ranked actions.">?</span>
+            </div>
+            <strong>Use Run Full Demo for the complete walkthrough, or Load Sample Data to inspect the workflow step by step.</strong>
+          </div>
+          <ol>
+            <li>Load account</li>
+            <li>Review actions</li>
+            <li>Generate memo</li>
+            <li>Launch tests</li>
+          </ol>
+        </section>
+
+        <section class="csv-contract" aria-label="CSV upload format">
+          <div>
+            <div class="eyebrow-row">
+              <p class="eyebrow">CSV contract</p>
+              <span class="help-tip" tabindex="0" aria-label="CSV contract help" data-help="The required input shape. Headers are flexible, but the app needs spend, traffic, leads, qualified leads, and ad context to make useful decisions.">?</span>
+            </div>
+            <h3>Required signals, flexible headers</h3>
+            <p>Signal Desk expects campaign performance rows with spend, traffic, lead volume, qualified lead volume, and creative context. Platform exports can use common aliases.</p>
+          </div>
+          <div class="schema-block">
+            <code>date, platform, campaign, ad_set, ad_name, spend, impressions, clicks, leads, qualified_leads, revenue, landing_page_url, creative_text</code>
+          </div>
+          <div class="csv-actions">
+            <a class="download-link" href="/api/sample-csv" download>Download sample CSV</a>
+            <span>Aliases: campaign_name, ad_group, amount_spent, conversions, qualified, url, headline, copy</span>
+          </div>
+        </section>
+
+        <section id="overview" class="metrics-grid" aria-label="Account summary metrics">
+          <article class="metric">
+            <div class="metric-label">
+              <span>Spend</span>
+              <span class="help-tip" tabindex="0" aria-label="Spend help" data-help="Total ad spend across every imported row after the CSV is normalized.">?</span>
+            </div>
+            <strong id="metricSpend">$0</strong>
+            <small id="metricSpendSub">Awaiting data</small>
+          </article>
+          <article class="metric">
+            <div class="metric-label">
+              <span>Leads</span>
+              <span class="help-tip" tabindex="0" aria-label="Leads help" data-help="Total raw leads, with the smaller qualified count shown underneath so lead quality stays visible.">?</span>
+            </div>
+            <strong id="metricLeads">0</strong>
+            <small id="metricLeadsSub">Awaiting data</small>
+          </article>
+          <article class="metric">
+            <div class="metric-label">
+              <span>Qualified CPL</span>
+              <span class="help-tip" tabindex="0" aria-label="Qualified CPL help" data-help="Spend divided by qualified leads. This is the core quality-adjusted efficiency metric used to compare campaigns.">?</span>
+            </div>
+            <strong id="metricQcpl">$0</strong>
+            <small id="metricQcplSub">Awaiting data</small>
+          </article>
+          <article class="metric urgent">
+            <div class="metric-label">
+              <span>Budget At Risk</span>
+              <span class="help-tip" tabindex="0" aria-label="Budget At Risk help" data-help="The summed impact of urgent budget-leak actions: ads spending enough money while producing very few qualified leads at a much worse qualified CPL than the account average.">?</span>
+            </div>
+            <strong id="metricRisk">$0</strong>
+            <small id="metricRiskSub">Awaiting data</small>
+          </article>
+        </section>
+
+        <section class="main-grid">
+          <section id="actions" class="panel action-panel">
+            <div class="panel-header">
+              <div>
+                <div class="eyebrow-row">
+                  <p class="eyebrow">Ranked by impact</p>
+                  <span class="help-tip" tabindex="0" aria-label="Action Queue help" data-help="A prioritized list of what the team should do next. Actions can be budget leaks, scale opportunities, landing page audits, or ad copy refreshes.">?</span>
+                </div>
+                <h3>Action Queue</h3>
+              </div>
+              <select id="actionFilter" aria-label="Filter actions">
+                <option value="all">All actions</option>
+                <option value="urgent">Urgent</option>
+                <option value="scale">Scale</option>
+                <option value="creative">Creative</option>
+                <option value="landing-page">Landing page</option>
+              </select>
+            </div>
+            <div id="actionList" class="action-list empty-state">
+              Load data to generate optimization actions.
+            </div>
+          </section>
+
+          <aside class="panel detail-panel">
+            <div class="eyebrow-row">
+              <p class="eyebrow">Decision support</p>
+              <span class="help-tip" tabindex="0" aria-label="Decision support help" data-help="Explains the selected recommendation with supporting metrics, confidence, estimated impact, and the next step to take.">?</span>
+            </div>
+            <h3 id="detailTitle">Select an action</h3>
+            <p id="detailBody">The system will show the metrics, reasoning, and next step for the selected recommendation.</p>
+            <dl id="detailStats" class="detail-stats"></dl>
+            <div id="workflowControls" class="workflow-controls"></div>
+          </aside>
+        </section>
+
+
+        <section id="standup" class="panel standup-panel">
+          <div class="panel-header">
+            <div>
+              <div class="eyebrow-row">
+                <p class="eyebrow">Operator workflow</p>
+                <span class="help-tip" tabindex="0" aria-label="Team Standup Plan help" data-help="Approve, review, ignore, or complete recommendations. Signal Desk turns approved work into a copyable daily standup plan for the marketing team.">?</span>
+              </div>
+              <h3>Team Standup Plan</h3>
+            </div>
+            <div class="panel-actions">
+              <button id="copyStandup" type="button">Copy Standup</button>
+              <button id="clearDecisions" class="ghost-button" type="button">Clear Decisions</button>
+            </div>
+          </div>
+          <div id="approvedPlan" class="standup-list empty-state">Approve actions to build today&apos;s operating plan.</div>
+          <textarea id="standupOutput" class="standup-output" readonly spellcheck="false">Load an account, then approve actions to generate a team standup plan.</textarea>
+        </section>
+        <section id="aiAgent" class="ai-grid">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="eyebrow-row">
+                  <p class="eyebrow">AI operator</p>
+                  <span class="help-tip" tabindex="0" aria-label="AI Operator help" data-help="Turns the analysis into a plain-English daily action memo. If OpenAI is not configured, the deterministic fallback still uses the same campaign signals.">?</span>
+                </div>
+                <h3>Daily Action Memo</h3>
+              </div>
+              <span id="memoMode" class="pill">Agent fallback ready</span>
+            </div>
+            <textarea id="memoOutput" readonly spellcheck="false">Load an account, then generate an AI summary of what to do next.</textarea>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="eyebrow-row">
+                  <p class="eyebrow">AI creative lab</p>
+                  <span class="help-tip" tabindex="0" aria-label="AI Creative Lab help" data-help="Creates fresh ad hooks, primary text ideas, and landing page headline tests grounded in the selected action.">?</span>
+                </div>
+                <h3>Ad Copy Ideas</h3>
+              </div>
+              <button id="generateVariants" type="button">Generate Ad Ideas</button>
+            </div>
+            <textarea id="variantOutput" readonly spellcheck="false">Select an action, then generate new ad copy ideas.</textarea>
+          </section>
+        </section>
+
+        <section class="lower-grid">
+          <section id="creative" class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="eyebrow-row">
+                  <p class="eyebrow">Creative patterns</p>
+                  <span class="help-tip" tabindex="0" aria-label="Winning Messages help" data-help="Groups similar ad messages and compares which themes are producing qualified leads most efficiently.">?</span>
+                </div>
+                <h3>Winning Messages</h3>
+              </div>
+            </div>
+            <div id="angleList" class="angle-list empty-state">Winning message analysis appears after data is loaded.</div>
+          </section>
+
+          <section id="brief" class="panel">
+            <div class="panel-header">
+              <div>
+                <div class="eyebrow-row">
+                  <p class="eyebrow">Experiment builder</p>
+                  <span class="help-tip" tabindex="0" aria-label="Experiment Plan help" data-help="Builds a test plan from the selected action: hypothesis, launch steps, success rule, kill rule, and metrics to watch.">?</span>
+                </div>
+                <h3>Experiment Plan</h3>
+              </div>
+              <button id="copyBrief" type="button">Copy Plan</button>
+            </div>
+            <textarea id="briefOutput" readonly spellcheck="false">Load an account, select an action, then generate the next experiment plan.</textarea>
+          </section>
+        </section>
+
+        <section class="panel data-panel">
+          <div class="panel-header">
+            <div>
+              <div class="eyebrow-row">
+                <p class="eyebrow">Normalized rows</p>
+                <span class="help-tip" tabindex="0" aria-label="Campaign Snapshot help" data-help="Shows the cleaned campaign groups Signal Desk analyzed, including spend, clicks, leads, qualified leads, CPL, qualified CPL, and CTR.">?</span>
+              </div>
+              <h3>Campaign Snapshot</h3>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Platform</th>
+                  <th>Campaign</th>
+                  <th>Spend</th>
+                  <th>Clicks</th>
+                  <th>Leads</th>
+                  <th>Qualified</th>
+                  <th>CPL</th>
+                  <th>Q-CPL</th>
+                  <th>CTR</th>
+                </tr>
+              </thead>
+              <tbody id="campaignRows">
+                <tr>
+                  <td colspan="9">No rows loaded.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel correction-panel">
+          <div class="panel-header">
+            <div>
+              <div class="eyebrow-row">
+                <p class="eyebrow">Data corrections</p>
+                <span class="help-tip" tabindex="0" aria-label="Data Corrections help" data-help="Fix a loaded campaign row without editing the original CSV. Signal Desk re-runs analysis after you apply changes.">?</span>
+              </div>
+              <h3>Edit Loaded Row</h3>
+            </div>
+            <button id="applyRowEdit" type="button">Apply Changes</button>
+          </div>
+          <div class="correction-grid">
+            <label class="form-field wide">
+              <span>Row</span>
+              <select id="editRowSelect" aria-label="Select loaded row to edit">
+                <option value="">Load data to edit rows</option>
+              </select>
+            </label>
+            <label class="form-field">
+              <span>Spend</span>
+              <input id="editSpend" type="number" min="0" step="0.01" />
+            </label>
+            <label class="form-field">
+              <span>Impressions</span>
+              <input id="editImpressions" type="number" min="0" step="1" />
+            </label>
+            <label class="form-field">
+              <span>Clicks</span>
+              <input id="editClicks" type="number" min="0" step="1" />
+            </label>
+            <label class="form-field">
+              <span>Leads</span>
+              <input id="editLeads" type="number" min="0" step="1" />
+            </label>
+            <label class="form-field">
+              <span>Qualified</span>
+              <input id="editQualified" type="number" min="0" step="1" />
+            </label>
+            <label class="form-field">
+              <span>Revenue</span>
+              <input id="editRevenue" type="number" min="0" step="0.01" />
+            </label>
+            <label class="form-field wide">
+              <span>Campaign</span>
+              <input id="editCampaign" type="text" />
+            </label>
+            <label class="form-field wide">
+              <span>Ad name</span>
+              <input id="editAdName" type="text" />
+            </label>
+            <label class="form-field full">
+              <span>Creative text</span>
+              <textarea id="editCreativeText" spellcheck="false"></textarea>
+            </label>
+          </div>
+          <p id="editStatus" class="edit-status">Load an account to make row-level corrections.</p>
+        </section>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
