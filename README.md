@@ -1,72 +1,128 @@
 # Signal Desk
 
-Signal Desk is an AI-first media buying command center for paid media teams. It turns cross-platform ad exports into a prioritized action queue: where budget is leaking, which winning messages are working, and what test the team should launch next.
+Signal Desk is an AI-first marketing command center built for the It's Today Media build competition. It helps a paid media team answer the daily operating question that matters most:
 
-The product is built as a FastAPI service plus a lightweight operator console because the long-term version should behave like internal marketing infrastructure: API-first, connector-friendly, and easy to expose through agent/MCP tools.
+```text
+What should we do with today's budget?
+```
 
-## Demo Path
+Live demo:
 
-1. Open the app.
-2. Click **Run Full Demo**.
-3. Review the account metrics and ranked action queue.
-4. Select an action to inspect the evidence.
-5. Review the generated daily action memo, ad copy ideas, and experiment plan.
+```text
+https://marketing-signal-desk.onrender.com/
+```
 
-The full demo works without private ad accounts or API keys. Use **Load Sample Data** if you want to inspect the workflow one step at a time. The app also includes an in-app CSV contract panel and a downloadable sample CSV. If `OPENAI_API_KEY` is configured, the AI analyst layer upgrades memo and creative copy. If it is unavailable, Signal Desk uses deterministic agent fallback output from the same campaign analysis pipeline.
+The app analyzes campaign CSV exports, detects budget leaks, ranks the next best actions, explains the evidence, and turns those decisions into a daily operating plan for the marketing team.
 
-## What It Does
+## Competition Demo Note
 
-- Imports campaign performance CSVs from paid media exports.
-- Normalizes fields across platforms such as Meta, Google, TikTok, and Taboola.
-- Detects spend leaks, scale candidates, landing page mismatch symptoms, and creative fatigue.
-- Ranks recommendations by estimated impact.
-- Explains every recommendation with supporting metrics.
-- Clusters creative copy into performance messages.
-- Generates deterministic experiment plans from selected actions.
-- Uses an optional OpenAI analyst layer for action memos and ad copy ideas.
-- Exports the action queue for a media buying team to use in a daily standup.
+This repository is a demo version built specifically for the competition instance.
 
-## Why This Problem
+Some UI elements are intentionally included to make judging and walkthroughs easier, such as the **Judge demo path**, built-in sample data, CSV contract panel, and one-click full demo flow. In a production deployment, those demo affordances would be removed or moved behind onboarding/admin tools. The production version would focus on live ad platform connectors, CRM data, scheduled reporting, approval workflows, and team delivery channels.
 
-Media buying teams do not need another passive dashboard. They need faster answers to the question: what should we do with today's budget?
+## Why It Exists
 
-Signal Desk sits directly in the workflow described by It's Today Media: ad platforms, reporting, optimization, landing pages, and lead generation. The first version uses CSV exports so it can be demonstrated without API access. The production version would replace CSV intake with live platform and CRM connectors.
+Media buying teams already have dashboards. The harder problem is deciding what to do next.
 
-## AI Design
+A marketer may have campaign data from Meta, Google, TikTok, native platforms, landing pages, and CRM exports. That creates a lot of reporting, but not always a clear operating queue. Signal Desk turns performance data into practical recommendations:
 
-Signal Desk uses a two-layer approach:
+- where budget is leaking
+- what should be scaled
+- where landing page mismatch is hurting conversion
+- which messages are producing qualified leads
+- what experiment should launch next
+- what the team should discuss in today's standup
 
-1. The Python analysis engine performs the math: normalization, CPL/Q-CPL calculations, action ranking, message scoring, and detection rules.
-2. The OpenAI analyst layer interprets those grounded signals into a daily action memo and ad copy idea pack when `OPENAI_API_KEY` is configured.
+The goal is not to replace the media buyer. The goal is to give the team an AI-assisted operator that can process account signals quickly and produce grounded next steps.
 
-This keeps the tool AI-enhanced rather than AI-fragile. If OpenAI is not configured, over quota, or unavailable, the operator still gets useful recommendations.
+## What Signal Desk Does
+
+- Imports campaign performance CSVs.
+- Normalizes flexible platform export headers.
+- Calculates spend, impressions, clicks, leads, qualified leads, CPL, qualified CPL, CTR, lead conversion rate, qualified rate, and revenue.
+- Detects budget leaks, scale candidates, landing page issues, and creative fatigue.
+- Ranks actions by estimated impact.
+- Explains each recommendation with supporting metrics.
+- Groups creative copy into winning message themes.
+- Generates a Daily Action Memo.
+- Generates Ad Copy Ideas for the selected recommendation.
+- Generates an Experiment Plan with hypothesis, launch plan, success rule, kill rule, and metrics to watch.
+- Lets users approve, review, ignore, or mark actions done.
+- Builds a copyable Team Standup Plan from approved actions.
+- Allows row-level corrections after upload without editing and re-uploading the CSV.
+- Supports optional OpenAI output while keeping a deterministic fallback mode.
+
+## AI Agent Design
+
+Signal Desk uses a grounded two-layer design:
+
+1. **Deterministic analysis engine**
+   The Python backend normalizes rows, calculates metrics, scores actions, detects issues, and builds structured recommendations.
+
+2. **AI analyst layer**
+   When OpenAI is available, the app turns the grounded analysis into operator-facing memos and creative ideas. If OpenAI is not available, the app returns polished deterministic fallback output from the same analysis pipeline.
+
+This keeps the demo reliable. It can run with no API key, but it can also use live AI output.
+
+Users can provide an OpenAI API key inside the app under **AI Settings**. The server does not store that key. If the user chooses "Remember on this device," the key is stored only in that browser's local storage.
+
+## Main Workflow
+
+1. Load the sample account or upload a campaign CSV.
+2. Review account metrics: spend, leads, qualified CPL, and budget at risk.
+3. Inspect the ranked Action Queue.
+4. Select a recommendation to see evidence and next steps.
+5. Approve, review, ignore, or mark recommendations done.
+6. Generate the Daily Action Memo and Ad Copy Ideas.
+7. Review Winning Messages.
+8. Review or copy the Experiment Plan.
+9. Copy the Team Standup Plan for the media buying team.
+
+## Demo Data
+
+The built-in sample account includes realistic rows across platforms such as Meta, Google, TikTok, and Taboola-style campaign data.
+
+The demo intentionally includes a budget leak so the app can show:
+
+- Budget At Risk
+- urgent action detection
+- recommendation ranking
+- decision support
+- fallback AI output
+- standup plan generation
+
+## CSV Format
+
+Recommended fields:
+
+```csv
+date,platform,campaign,ad_set,ad_name,spend,impressions,clicks,leads,qualified_leads,revenue,landing_page_url,creative_text
+```
+
+The parser also recognizes common aliases, including:
+
+```text
+campaign_name, ad_group, amount_spent, conversions, qualified, url, headline, copy
+```
+
+After upload, users can make lightweight corrections inside the app. This is meant for fixing obvious row-level issues without turning Signal Desk into a full spreadsheet editor.
 
 ## Architecture
 
 ```text
 signal-desk/
   backend/
-    main.py          FastAPI routes and app shell
-    analysis.py      Normalization, triage rules, message intelligence, brief generation
-    ai.py            Optional OpenAI analyst layer with fallback mode
+    main.py          FastAPI routes and static frontend serving
+    analysis.py      Normalization, metrics, detection rules, ranking, briefs
+    ai.py            Optional OpenAI layer and deterministic fallback
     schemas.py       Pydantic API contracts
     sample_data.py   Demo account loader
-    sample-data.csv  Realistic contest demo fixture
+    sample-data.csv  Contest demo fixture
   frontend/
-    index.html       Operator dashboard
-    styles.css       Responsive interface styling
-    app.js           Thin API client and UI rendering
+    index.html       Operator console
+    app.js           Frontend state, API calls, rendering, workflow controls
+    styles.css       Responsive interface and dashboard styling
 ```
-
-The backend exposes tool-shaped functions now, which makes the next MCP layer straightforward:
-
-- `analyze_campaign_export`
-- `detect_budget_leaks`
-- `rank_media_buying_actions`
-- `generate_test_brief`
-- `generate_daily_buyer_memo`
-- `generate_creative_variants`
-- `export_action_queue`
 
 ## API
 
@@ -90,13 +146,20 @@ pip install -r requirements.txt
 uvicorn backend.main:app --reload --port 8001
 ```
 
-Then open:
+Open:
 
 ```text
 http://127.0.0.1:8001
 ```
 
-## Optional OpenAI Setup
+## Optional OpenAI
+
+Signal Desk works without OpenAI configuration.
+
+For live AI output, either:
+
+- paste an API key into **AI Settings** in the app, or
+- set environment variables before starting the backend.
 
 PowerShell:
 
@@ -112,34 +175,54 @@ Health check:
 http://127.0.0.1:8001/api/health
 ```
 
-With a working key, you should see `openai_configured: true`, `provider: openai`, and `model: gpt-4.1-mini`.
+## Deployment
 
-## CSV Format
+The demo is deployed on Render:
 
-The dashboard shows the expected CSV contract near the top of the app. You can also download a sample file from `/api/sample-csv`.
-
-Recommended fields:
-
-```csv
-date,platform,campaign,ad_set,ad_name,spend,impressions,clicks,leads,qualified_leads,revenue,landing_page_url,creative_text
+```text
+https://marketing-signal-desk.onrender.com/
 ```
 
-The parser also recognizes common variants such as `campaign_name`, `ad_group`, `amount_spent`, `conversions`, `qualified`, `url`, `headline`, and `copy`.
+Render settings:
+
+```text
+Runtime: Python 3
+Build Command: pip install -r requirements.txt
+Start Command: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+Health Check Path: /api/health
+```
+
+The repository includes `render.yaml` for blueprint-based deployment.
 
 ## Verification
 
 ```bash
 python smoke_api.py
+python -m compileall backend
 node --check frontend/app.js
 ```
 
-## What I Would Build Next
+## Production Direction
 
-1. Live API connectors for Meta, Google Ads, TikTok, and Taboola.
-2. CRM/lead-quality ingestion so the system optimizes for qualified leads and revenue, not just cheap form fills.
-3. Daily scheduled analysis with Slack delivery.
+If this became a production product, the contest-specific demo scaffolding would be removed or replaced with production workflows:
+
+1. Live connectors for Meta, Google Ads, TikTok, Taboola, and other ad platforms.
+2. CRM and lead-quality ingestion so the team optimizes for qualified leads and revenue, not just cheap form fills.
+3. Scheduled daily analysis and Slack/email delivery.
 4. Human approval workflows for budget changes, pauses, and creative launches.
-5. Landing page crawler that scores message match, speed, trust signals, and CTA friction.
-6. Creative asset analysis for images and video frames.
-7. MCP server support so internal AI agents can query account health and create optimization plans.
+5. Landing page crawler for message match, page speed, trust signals, and CTA friction.
+6. Creative asset analysis for images and videos.
+7. Agent/MCP interface so internal tools can query account health and create optimization plans.
 8. Closed-loop learning from accepted, ignored, and successful recommendations.
+
+## Tech Stack
+
+- FastAPI
+- Pydantic
+- Vanilla HTML/CSS/JavaScript
+- Optional OpenAI API
+- Render hosting
+
+## Project Status
+
+Signal Desk is a competition-ready demo. It is designed to show the product direction clearly without requiring private ad account access, paid API usage, or complex setup.
