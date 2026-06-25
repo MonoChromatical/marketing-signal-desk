@@ -490,6 +490,29 @@ async function generateVariants() {
 }
 
 
+
+function rowGroupKey(row) {
+  return `${row.platform} :: ${row.campaign} :: ${row.ad_name}`;
+}
+
+function sourceRowsForGroup(group) {
+  const rows = state.analysis?.rows || [];
+  return rows.filter((row) => row.platform === group.platform && row.campaign === group.campaign && row.ad_name === group.ad_name);
+}
+
+function sourceRowsForRow(row) {
+  const rows = state.analysis?.rows || [];
+  return rows.filter((item) => rowGroupKey(item) === rowGroupKey(row));
+}
+
+function selectedRowRollupSummary(row) {
+  const rows = sourceRowsForRow(row);
+  const totalLeads = rows.reduce((sum, item) => sum + item.leads, 0);
+  const totalSpend = rows.reduce((sum, item) => sum + item.spend, 0);
+  const rowIndex = rows.findIndex((item) => item.id === row.id) + 1;
+  return `Editing source row ${rowIndex} of ${rows.length}. This row has ${number(row.leads)} leads; the Campaign / Ad Snapshot rollup totals ${number(totalLeads)} leads and ${money(totalSpend)} spend.`;
+}
+
 function renderRowEditor() {
   const rows = state.analysis?.rows || [];
   if (!rows.length) {
@@ -541,7 +564,7 @@ function fillRowEditor() {
   dom.editCampaign.value = row.campaign || "";
   dom.editAdName.value = row.ad_name || "";
   dom.editCreativeText.value = row.creative_text || "";
-  dom.editStatus.textContent = "Edit the selected row, then apply changes to re-run analysis.";
+  dom.editStatus.textContent = selectedRowRollupSummary(row);
 }
 
 async function applyRowEdit() {
@@ -582,15 +605,18 @@ function numericInput(input) {
 
 function renderTable() {
   if (!state.analysis?.campaigns?.length) {
-    dom.campaignRows.innerHTML = `<tr><td colspan="10">No rows loaded.</td></tr>`;
+    dom.campaignRows.innerHTML = `<tr><td colspan="11">No rows loaded.</td></tr>`;
     return;
   }
 
-  dom.campaignRows.innerHTML = state.analysis.campaigns.map((group) => `
+  dom.campaignRows.innerHTML = state.analysis.campaigns.map((group) => {
+    const sourceCount = sourceRowsForGroup(group).length;
+    return `
     <tr>
       <td>${escapeHTML(group.platform)}</td>
       <td>${escapeHTML(group.campaign)}</td>
       <td>${escapeHTML(group.ad_name)}</td>
+      <td>${sourceCount}</td>
       <td>${money(group.spend)}</td>
       <td>${number(group.clicks)}</td>
       <td>${number(group.leads)}</td>
@@ -599,7 +625,8 @@ function renderTable() {
       <td>${money(group.qcpl)}</td>
       <td>${percent(group.ctr)}</td>
     </tr>
-  `).join("");
+  `;
+  }).join("");
 }
 
 async function exportActions() {
