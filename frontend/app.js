@@ -51,6 +51,7 @@ const dom = {
   standupOutput: document.querySelector("#standupOutput"),
   copyStandup: document.querySelector("#copyStandup"),
   clearDecisions: document.querySelector("#clearDecisions"),
+  editGroupSelect: document.querySelector("#editGroupSelect"),
   editRowSelect: document.querySelector("#editRowSelect"),
   editSpend: document.querySelector("#editSpend"),
   editImpressions: document.querySelector("#editImpressions"),
@@ -514,18 +515,35 @@ function selectedRowRollupSummary(row) {
 }
 
 function renderRowEditor() {
-  const rows = state.analysis?.rows || [];
-  if (!rows.length) {
-    dom.editRowSelect.innerHTML = `<option value="">Load data to edit rows</option>`;
+  const groups = state.analysis?.campaigns || [];
+  if (!groups.length) {
+    dom.editGroupSelect.innerHTML = `<option value="">Load data to edit rows</option>`;
+    dom.editRowSelect.innerHTML = `<option value="">Choose a campaign / ad first</option>`;
     dom.editStatus.textContent = "Load an account to make row-level corrections.";
     setRowEditorDisabled(true);
     return;
   }
 
   setRowEditorDisabled(false);
+  const currentGroupKey = dom.editGroupSelect.value || groups[0].key;
+  dom.editGroupSelect.innerHTML = groups.map((group) => `
+    <option value="${escapeHTML(group.key)}">${escapeHTML(group.platform)} - ${escapeHTML(group.campaign)} - ${escapeHTML(group.ad_name)} (${sourceRowsForGroup(group).length} source rows)</option>
+  `).join("");
+  dom.editGroupSelect.value = groups.some((group) => group.key === currentGroupKey) ? currentGroupKey : groups[0].key;
+  renderSourceRowOptions();
+}
+
+function renderSourceRowOptions() {
+  const rows = sourceRowsForSelectedGroup();
+  if (!rows.length) {
+    dom.editRowSelect.innerHTML = `<option value="">No source rows found</option>`;
+    fillRowEditor();
+    return;
+  }
+
   const currentId = dom.editRowSelect.value || rows[0].id;
-  dom.editRowSelect.innerHTML = rows.map((row) => `
-    <option value="${escapeHTML(row.id)}">${escapeHTML(row.date || "No date")} - ${escapeHTML(row.platform)} - ${escapeHTML(row.campaign)} - ${escapeHTML(row.ad_name)}</option>
+  dom.editRowSelect.innerHTML = rows.map((row, index) => `
+    <option value="${escapeHTML(row.id)}">Row ${index + 1}: ${escapeHTML(row.date || "No date")} - ${number(row.leads)} leads - ${money(row.spend)} spend</option>
   `).join("");
   dom.editRowSelect.value = rows.some((row) => row.id === currentId) ? currentId : rows[0].id;
   fillRowEditor();
@@ -533,6 +551,7 @@ function renderRowEditor() {
 
 function setRowEditorDisabled(disabled) {
   [
+    dom.editGroupSelect,
     dom.editRowSelect,
     dom.editSpend,
     dom.editImpressions,
@@ -547,8 +566,18 @@ function setRowEditorDisabled(disabled) {
   ].forEach((element) => { element.disabled = disabled; });
 }
 
+function selectedGroup() {
+  const groups = state.analysis?.campaigns || [];
+  return groups.find((group) => group.key === dom.editGroupSelect.value) || groups[0] || null;
+}
+
+function sourceRowsForSelectedGroup() {
+  const group = selectedGroup();
+  return group ? sourceRowsForGroup(group) : [];
+}
+
 function editableRow() {
-  const rows = state.analysis?.rows || [];
+  const rows = sourceRowsForSelectedGroup();
   return rows.find((row) => row.id === dom.editRowSelect.value) || rows[0] || null;
 }
 
@@ -694,6 +723,7 @@ dom.copyStandup.addEventListener("click", async () => {
   setTimeout(() => { dom.copyStandup.textContent = "Copy Standup"; }, 1100);
 });
 dom.clearDecisions.addEventListener("click", clearActionDecisions);
+dom.editGroupSelect.addEventListener("change", renderSourceRowOptions);
 dom.editRowSelect.addEventListener("change", fillRowEditor);
 dom.applyRowEdit.addEventListener("click", () => applyRowEdit().catch((error) => { dom.editStatus.textContent = error.message; }));
 dom.copyBrief.addEventListener("click", async () => {
