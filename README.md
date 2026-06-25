@@ -141,7 +141,8 @@ POST /api/export-actions
 ## Run Locally
 
 ```powershell
-cd "G:\ASSESSMENTS\PERSONAL PROJECTS\signal-desk"
+git clone https://github.com/MonoChromatical/marketing-signal-desk.git
+cd marketing-signal-desk
 pip install -r requirements.txt
 uvicorn backend.main:app --reload --port 8001
 ```
